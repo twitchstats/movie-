@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Виджет: сезон и серия</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800;900&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  :root{
+    --void:#0b0617;
+    --void-2:#160a30;
+    --card-top:rgba(41,20,74,.62);
+    --card-bottom:rgba(13,7,26,.6);
+    --hairline:rgba(200,160,255,.14);
+    --violet:#a35bff;
+    --violet-bright:#cf94ff;
+    --violet-pale:#efe1ff;
+    --pink:#ff5fb8;
+    --text:#f6f0ff;
+    --text-dim:#a495cc;
+    --bg:transparent;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html, body{
+    width:100%;
+    height:100%;
+    background:var(--bg);
+    font-family:'Manrope', sans-serif;
+    overflow:hidden;
+  }
+
+  body.site-preview{
+    background:
+      radial-gradient(circle at 20% 15%, #241340 0%, transparent 55%),
+      radial-gradient(circle at 85% 80%, #160a30 0%, transparent 50%),
+      var(--void);
+    overflow:auto;
+    min-height:100vh;
+  }
+
+  #stage{
+    width:100%;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:40px 20px;
+  }
+
+  /* ---------- Карточка виджета ---------- */
+
+  #wrap{
+    position:relative;
+    isolation:isolate;
+    display:inline-flex;
+  }
+
+  #wrap::before{
+    content:"";
+    position:absolute;
+    top:-40px; left:50%;
+    transform:translateX(-50%);
+    width:420px; height:200px;
+    background:radial-gradient(ellipse at center, rgba(163,91,255,.24), transparent 70%);
+    pointer-events:none;
+    z-index:-1;
+  }
+
+  #wrap::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    opacity:.045;
+    mix-blend-mode:overlay;
+    border-radius:100px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    z-index:5;
+  }
+
+  .card{
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    gap:22px;
+    padding:16px 34px 16px 16px;
+    border-radius:100px;
+    background:linear-gradient(155deg, var(--card-top), var(--card-bottom));
+    border:1px solid var(--hairline);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    box-shadow:0 14px 40px -14px rgba(0,0,0,.55);
+  }
+
+  .photo-wrap{
+    position:relative;
+    width:88px;
+    height:88px;
+    aspect-ratio:1/1;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .ring{
+    position:absolute;
+    inset:-4px;
+    border-radius:50%;
+    background:conic-gradient(from 0deg, var(--violet-pale), var(--pink) 30%, transparent 55%, transparent 75%, var(--violet-pale));
+    animation:spin 3.6s linear infinite;
+    filter:drop-shadow(0 0 8px rgba(226,190,255,.4));
+  }
+
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .photo{
+    position:relative;
+    z-index:1;
+    width:100%;
+    height:100%;
+    aspect-ratio:1/1;
+    border-radius:50%;
+    object-fit:cover;
+    object-position:50% 22%;
+    display:block;
+    background:#241340;
+    border:2px solid var(--void);
+  }
+
+  .info{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    min-width:0;
+    z-index:2;
+  }
+
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    font-weight:500;
+    color:var(--text-dim);
+    letter-spacing:.2px;
+  }
+
+  .season-episode{
+    font-family:'Bricolage Grotesque', sans-serif;
+    font-weight:800;
+    font-size:26px;
+    letter-spacing:-0.5px;
+    line-height:1.1;
+    color:var(--text);
+    background:linear-gradient(100deg, #ffffff 10%, var(--violet-bright) 130%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 0 12px rgba(163,91,255,.4));
+    display:inline-block;
+    white-space:nowrap;
+  }
+
+  /* ---------- Панель настроек (не показывается в OBS) ---------- */
+
+  .panel{
+    width:100%;
+    max-width:440px;
+    margin:28px auto 0;
+    padding:22px;
+    border-radius:20px;
+    background:linear-gradient(155deg, var(--card-top), var(--card-bottom));
+    border:1px solid var(--hairline);
+    font-family:'Manrope', sans-serif;
+    color:var(--text);
+  }
+
+  .panel h2{
+    margin:0 0 4px;
+    font-family:'Bricolage Grotesque', sans-serif;
+    font-size:17px;
+    font-weight:800;
+  }
+
+  .panel p.hint{
+    margin:0 0 18px;
+    font-size:13px;
+    color:var(--text-dim);
+    line-height:1.5;
+  }
+
+  .field{ margin-bottom:14px; }
+
+  .field label{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--text-dim);
+    margin-bottom:6px;
+    letter-spacing:.2px;
+  }
+
+  .field input{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid var(--hairline);
+    background:rgba(0,0,0,.28);
+    color:var(--text);
+    font-family:'Manrope', sans-serif;
+    font-size:14px;
+  }
+
+  .field input:focus{
+    outline:none;
+    border-color:var(--violet);
+  }
+
+  .row{ display:flex; gap:12px; }
+  .row .field{ flex:1; }
+
+  .checkbox-row{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    margin-bottom:16px;
+  }
+
+  .checkbox-row input[type="checkbox"]{
+    width:17px;
+    height:17px;
+    accent-color:var(--violet);
+    cursor:pointer;
+  }
+
+  .checkbox-row label{
+    font-family:'Manrope', sans-serif;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text);
+    cursor:pointer;
+  }
+
+  .field.hidden{ display:none; }
+
+  .actions{ display:flex; gap:10px; margin-top:6px; }
+
+  button{
+    flex:1;
+    padding:11px 14px;
+    border-radius:10px;
+    border:none;
+    font-family:'Manrope', sans-serif;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+  }
+
+  #copyBtn{ background:var(--violet); color:white; }
+  #copyBtn:hover{ background:var(--violet-bright); color:var(--void); }
+  #copyBtn.copied{ background:#4ade80; color:#06280f; }
+
+  #bgToggle{
+    background:transparent;
+    border:1px solid var(--hairline);
+    color:var(--text-dim);
+  }
+
+  .link-out{
+    margin-top:12px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--text-dim);
+    word-break:break-all;
+    background:rgba(0,0,0,.28);
+    border-radius:8px;
+    padding:8px 10px;
+    display:none;
+  }
+  .link-out.visible{ display:block; }
+</style>
+</head>
+<body class="site-preview">
+
+  <div id="stage">
+    <div id="wrap">
+      <div class="card">
+        <div class="photo-wrap">
+          <div class="ring"></div>
+          <img class="photo" id="photo" alt="">
+        </div>
+        <div class="info">
+          <div class="eyebrow" id="title"></div>
+          <div class="season-episode" id="seasonEpisode"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel">
+    <h2>Настройка виджета</h2>
+    <p class="hint">Заполни поля — карточка выше обновится сразу. Когда всё готово, нажми «Скопировать ссылку для OBS» и вставь её в свойства Browser Source.</p>
+
+    <div class="field">
+      <label>Ссылка на фото</label>
+      <input type="text" id="in-photo" placeholder="https://...">
+    </div>
+
+    <div class="field">
+      <label>Название</label>
+      <input type="text" id="in-title" placeholder="Название сериала или фильма">
+    </div>
+
+    <div class="checkbox-row" id="movieCheckboxRow">
+      <input type="checkbox" id="in-movie">
+      <label for="in-movie">Это фильм (без сезона и серии)</label>
+    </div>
+
+    <div class="row" id="episodeRow">
+      <div class="field">
+        <label>Сезон</label>
+        <input type="text" id="in-season" placeholder="1">
+      </div>
+      <div class="field">
+        <label>Серия</label>
+        <input type="text" id="in-episode" placeholder="1">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="copyBtn">Скопировать ссылку для OBS</button>
+      <button id="bgToggle">Показать на прозрачном фоне</button>
+    </div>
+
+    <div class="link-out" id="linkOut"></div>
+  </div>
+
+<script>
+  const DEFAULT_PHOTO = "data:image/svg+xml;utf8," + encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 84 84'>
+      <rect width='84' height='84' fill='#241340'/>
+      <circle cx='42' cy='32' r='16' fill='#3d2564'/>
+      <ellipse cx='42' cy='78' rx='28' ry='22' fill='#3d2564'/>
+    </svg>`
+  );
+
+  const params = new URLSearchParams(location.search);
+
+  const state = {
+    photo: params.get('photo') || 'https://i.ibb.co/N2GtFDrN/600x900.jpg',
+    title: params.get('title') || '',
+    type: params.get('type') === 'movie' ? 'movie' : 'series',
+    season: params.get('season') || '1',
+    episode: params.get('episode') || '1',
+  };
+
+  const els = {
+    photo: document.getElementById('photo'),
+    title: document.getElementById('title'),
+    seasonEpisode: document.getElementById('seasonEpisode'),
+    inPhoto: document.getElementById('in-photo'),
+    inTitle: document.getElementById('in-title'),
+    inSeason: document.getElementById('in-season'),
+    inEpisode: document.getElementById('in-episode'),
+    episodeRow: document.getElementById('episodeRow'),
+    inMovie: document.getElementById('in-movie'),
+    panel: document.getElementById('panel'),
+    copyBtn: document.getElementById('copyBtn'),
+    bgToggle: document.getElementById('bgToggle'),
+    linkOut: document.getElementById('linkOut'),
+  };
+
+  function render(){
+    els.photo.src = state.photo || DEFAULT_PHOTO;
+    els.title.textContent = state.title || '';
+    els.title.style.display = state.title ? '' : 'none';
+    if (state.type === 'movie'){
+      els.seasonEpisode.style.display = 'none';
+    } else {
+      els.seasonEpisode.style.display = '';
+      els.seasonEpisode.innerHTML = `${state.season} сезон, ${state.episode} серия`;
+    }
+  }
+
+  // Режим OBS: если в ссылке есть obs=1, панель настроек не показывается,
+  // а фон остаётся полностью прозрачным.
+  if (params.get('obs') === '1'){
+    els.panel.style.display = 'none';
+    document.body.classList.remove('site-preview');
+  } else {
+    function updateTypeUI(){
+      els.inMovie.checked = state.type === 'movie';
+      els.episodeRow.classList.toggle('hidden', state.type === 'movie');
+    }
+
+    els.inMovie.addEventListener('change', () => {
+      state.type = els.inMovie.checked ? 'movie' : 'series';
+      updateTypeUI();
+      render();
+    });
+    updateTypeUI();
+
+    els.inPhoto.value = state.photo;
+    els.inTitle.value = state.title;
+    els.inSeason.value = state.season;
+    els.inEpisode.value = state.episode;
+
+    [
+      [els.inPhoto, 'photo'],
+      [els.inTitle, 'title'],
+      [els.inSeason, 'season'],
+      [els.inEpisode, 'episode'],
+    ].forEach(([input, key]) => {
+      input.addEventListener('input', () => {
+        state[key] = input.value;
+        render();
+      });
+    });
+
+    els.copyBtn.addEventListener('click', () => {
+      const url = new URL(location.href);
+      url.search = '';
+      const p = new URLSearchParams();
+      p.set('obs', '1');
+      if (state.photo) p.set('photo', state.photo);
+      if (state.title) p.set('title', state.title);
+      p.set('type', state.type);
+      p.set('season', state.season || '1');
+      p.set('episode', state.episode || '1');
+      const finalUrl = url.toString() + '?' + p.toString();
+
+      navigator.clipboard.writeText(finalUrl).catch(() => {});
+      els.linkOut.textContent = finalUrl;
+      els.linkOut.classList.add('visible');
+      els.copyBtn.textContent = 'Скопировано!';
+      els.copyBtn.classList.add('copied');
+      setTimeout(() => {
+        els.copyBtn.textContent = 'Скопировать ссылку для OBS';
+        els.copyBtn.classList.remove('copied');
+      }, 1800);
+    });
+
+    let transparentMode = false;
+    els.bgToggle.addEventListener('click', () => {
+      transparentMode = !transparentMode;
+      document.body.classList.toggle('site-preview', !transparentMode);
+      els.bgToggle.textContent = transparentMode ? 'Показать на тёмном фоне' : 'Показать на прозрачном фоне';
+    });
+  }
+
+  render();
+</script>
+</body>
+</html>
